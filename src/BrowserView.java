@@ -62,6 +62,7 @@ public class BrowserView {
     private Button myNextButton;
     private Button myHomeButton;
     // favorites
+    private Button myFavoriteButton;
     private ComboBox<String> myFavorites;
     // get strings from resource file
     private ResourceBundle myResources;
@@ -91,12 +92,12 @@ public class BrowserView {
      * Display given URL.
      */
     public void showPage (String url) {
-        URL valid = myModel.go(url);
-        if (valid != null) {
+        try {
+        	URL valid = myModel.go(url);
             update(valid);
         }
-        else {
-            showError("Could not load " + url);
+        catch (BrowserException e) {
+            showError(e.getMessage());
         }
     }
 
@@ -126,12 +127,22 @@ public class BrowserView {
 
     // move to the next URL in the history
     private void next () {
-        update(myModel.next());
+        try {
+        	update(myModel.next());
+        }
+        catch (BrowserException e) {
+        	showError(e.getMessage());
+        }
     }
 
     // move to the previous URL in the history
     private void back () {
-        update(myModel.back());
+       try {
+    	   update(myModel.back());
+       }
+       catch (BrowserException e) {
+    	   showError(e.getMessage());
+       }
     }
 
     // change current URL to the home page, if set
@@ -141,9 +152,14 @@ public class BrowserView {
 
     // change page to favorite choice
     private void showFavorite (String favorite) {
-        showPage(myModel.getFavorite(favorite).toString());
-        // reset favorites ComboBox so the same choice can be made again
-        myFavorites.setValue(null);
+        try {
+        	showPage(myModel.getFavorite(favorite).toString());
+        	// reset favorites ComboBox so the same choice can be made again
+        	myFavorites.setValue(null);
+        }
+        catch (BrowserException e) {
+        	showError(e.getMessage());
+        }
     }
 
     // update just the view to display given URL
@@ -213,6 +229,7 @@ public class BrowserView {
         result.getChildren().add(myNextButton);
         myHomeButton = makeButton("HomeCommand", event -> home());
         result.getChildren().add(myHomeButton);
+        
         // if user presses button or enter in text field, load/show the URL
         EventHandler<ActionEvent> showHandler = new ShowPage();
         result.getChildren().add(makeButton("GoCommand", showHandler));
@@ -225,7 +242,14 @@ public class BrowserView {
     private Node makePreferencesPanel () {
         HBox result = new HBox();
         myFavorites = new ComboBox<String>();
-        // ADD REST OF CODE HERE
+        myFavorites.setValue(myResources.getString("FavoriteFirstItem"));
+        myFavoriteButton = makeButton("FavoritePromptTitle", event -> addFavorite());
+        myFavorites.valueProperty().addListener(listener -> showFavorite(myFavorites.getValue()));
+        result.getChildren().add(myFavoriteButton);
+        result.getChildren().add(myFavorites);
+        
+        
+        
         result.getChildren().add(makeButton("SetHomeCommand", event -> {
             myModel.setHome();
             enableButtons();
